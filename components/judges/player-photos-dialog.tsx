@@ -5,6 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Player } from '@/lib/types';
 import Image from 'next/image';
+import { Button } from '../ui/button';
+import { extractCardsListFromPicture } from '@/app/judges/tools/events/[eventId]/actions';
 
 interface PlayerPhotosDialogProps {
   open: boolean;
@@ -27,6 +29,7 @@ export function PlayerPhotosDialog({ open, onOpenChange, player }: PlayerPhotosD
             </CardHeader>
             <CardContent>
               {player.poolPhotoUrl ? (
+                <div>
                 <div className="relative w-full aspect-video">
                   <Image
                     src={player.poolPhotoUrl}
@@ -35,6 +38,8 @@ export function PlayerPhotosDialog({ open, onOpenChange, player }: PlayerPhotosD
                     className="object-contain rounded"
                     unoptimized
                   />
+                </div>
+                <Button onClick={() => player.poolPhotoUrl && extractCardsListFromPicture({ url: player.poolPhotoUrl })}>Extract cards</Button>
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground">
@@ -50,14 +55,17 @@ export function PlayerPhotosDialog({ open, onOpenChange, player }: PlayerPhotosD
             </CardHeader>
             <CardContent>
               {player.decklistPhotoUrl ? (
-                <div className="relative w-full aspect-video">
-                  <Image
-                    src={player.decklistPhotoUrl}
-                    alt="Decklist"
-                    fill
-                    className="object-contain rounded"
-                    unoptimized
-                  />
+                <div className="relative w-full">
+                  <div className="relative w-full aspect-video">
+                    <Image
+                      src={player.decklistPhotoUrl}
+                      alt="Decklist"
+                      fill
+                      className="object-contain rounded"
+                      unoptimized
+                    />
+                  </div>
+                  <Button onClick={() => player.decklistPhotoUrl && extractCardsListFromPicture({ url: player.decklistPhotoUrl })}>Extract cards</Button>
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground">
