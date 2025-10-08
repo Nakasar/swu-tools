@@ -17,13 +17,13 @@ export async function extractCardsListFromPicture({ url }: { url: string }): Pro
             {
                 role: "user",
                 content: [
-                    { type: 'text', text: `Extract the list of cards from this image of a decklist. Return only the card names, no quantities or other text. If you can't identify any cards, return an empty list.` },
+                    { type: 'text', text: `Extract the list of cards from this image of a decklist. Return only the card names, no quantities or other text. If there are multiple times the same card, include its name multiple times in the array. If you can't identify any cards, return an empty list.` },
                     { type: 'image', image: url },
                 ],
             },
         ],
         schema: z.object({
-            cards: z.array(z.string()).min(1).max(100)
+            cards: z.array(z.string()).min(0).max(150)
         }),
         maxRetries: 3,
         temperature: 0.1,
