@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus } from 'lucide-react';
+import { authClient } from '@/lib/auth-client';
 
 export default function LimitedToolPage() {
   const router = useRouter();
@@ -15,6 +16,15 @@ export default function LimitedToolPage() {
   const [format, setFormat] = useState<'sealed' | 'draft'>('sealed');
   const [creatorEmail, setCreatorEmail] = useState('');
   const [isCreating, setIsCreating] = useState(false);
+  const { data: session, isPending } = authClient.useSession();
+
+  if (isPending) {
+    return <></>;
+  }
+
+  if (!session?.user.email) {
+    return <>Vous devez être connecté pour créer un événement.</>;
+  }
 
   const handleCreateEvent = async () => {
     if (!eventName || !creatorEmail) {

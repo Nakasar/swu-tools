@@ -3,6 +3,8 @@ import { z } from 'zod';
 import { nanoid } from 'nanoid';
 import clientPromise from '@/lib/mongodb';
 import { LimitedEvent } from '@/lib/types';
+import { auth } from '@/lib/auth';
+import { headers } from 'next/headers';
 
 const addPlayerSchema = z.object({
   name: z.string().min(1),
@@ -13,13 +15,21 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ eventId: string }> }
 ) {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session?.user.email) { 
+    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+  }
+    
   const { eventId } = await params;
   try {
     const body = await request.json();
     const data = addPlayerSchema.parse(body);
 
     const client = await clientPromise;
-    const db = client.db('swu-tools');
+    const db = client.db();
 
     const player = {
       id: nanoid(),
@@ -27,6 +37,12 @@ export async function POST(
       email: data.email,
       deckChecks: [],
     };
+
+    const event = await db.collection<LimitedEvent>('events').findOne({ id: eventId }, { projection: { id: 1, judges: 1 } });
+
+    if (!event || event.judges.indexOf(session.user.email) === -1) { 
+      return NextResponse.json({ error: 'Event not found' }, { status: 404 });
+    }
 
     const result = await db.collection<LimitedEvent>('events').updateOne(
       { id: eventId },

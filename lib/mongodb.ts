@@ -29,3 +29,24 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 export default clientPromise;
+
+export const getAuthDatabaseSync = () => {
+  // Use the same client instance but access it synchronously
+  // This works because better-auth will handle the connection internally
+  if (process.env.NODE_ENV === "development") {
+    const globalWithMongo = global as typeof globalThis & {
+      _mongoClient?: MongoClient;
+    };
+    
+    if (!globalWithMongo._mongoClient) {
+      globalWithMongo._mongoClient = new MongoClient(uri, options);
+    }
+    return globalWithMongo._mongoClient.db();
+  } else {
+    // In production, create client if not exists (singleton pattern)
+    if (!client) {
+      client = new MongoClient(uri, options);
+    }
+    return client.db(process.env.MONGODB_DB || "better-auth");
+  }
+};
