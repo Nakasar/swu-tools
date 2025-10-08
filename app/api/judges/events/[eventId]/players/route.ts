@@ -6,7 +6,7 @@ import { LimitedEvent } from '@/lib/types';
 
 const addPlayerSchema = z.object({
   name: z.string().min(1),
-  email: z.string().email().optional(),
+  email: z.email().optional(),
 });
 
 export async function POST(

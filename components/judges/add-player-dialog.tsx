@@ -31,7 +31,7 @@ export function AddPlayerDialog({ open, onOpenChange, eventId, onSuccess }: AddP
       const response = await fetch(`/api/judges/events/${eventId}/players`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email }),
+        body: JSON.stringify({ name, email: email.length > 0 ? email : undefined }),
       });
 
       if (response.ok) {
