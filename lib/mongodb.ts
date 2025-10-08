@@ -47,6 +47,6 @@ export const getAuthDatabaseSync = () => {
     if (!client) {
       client = new MongoClient(uri, options);
     }
-    return client.db(process.env.MONGODB_DB || "better-auth");
+    return client.db();
   }
 };
