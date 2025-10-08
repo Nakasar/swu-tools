@@ -117,6 +117,7 @@ export function PlayersList({ players, eventId, onUpdate }: PlayersListProps) {
           open={showPhotos}
           onOpenChange={setShowPhotos}
           player={selectedPlayer}
+          eventId={eventId}
         />
       )}
 
