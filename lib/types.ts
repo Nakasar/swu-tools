@@ -25,7 +25,15 @@ export interface Player {
   name: string;
   email?: string;
   poolPhotoUrl?: string;
+  pool?: {
+    photoUrl?: string;
+    cards?: string[];
+  };
   decklistPhotoUrl?: string;
+  deck?: {
+    photoUrl?: string;
+    cards?: string[];
+  };
   deckChecks: DeckCheck[];
 }
 

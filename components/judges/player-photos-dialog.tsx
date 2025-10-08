@@ -3,7 +3,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import type { Player } from '@/lib/types';
+import type { LimitedEvent, Player } from '@/lib/types';
 import Image from 'next/image';
 import { Button } from '../ui/button';
 import { extractCardsListFromPicture } from '@/app/judges/tools/events/[eventId]/actions';
@@ -12,9 +12,10 @@ interface PlayerPhotosDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   player: Player;
+  eventId: LimitedEvent['id'];
 }
 
-export function PlayerPhotosDialog({ open, onOpenChange, player }: PlayerPhotosDialogProps) {
+export function PlayerPhotosDialog({ open, onOpenChange, player, eventId }: PlayerPhotosDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -39,7 +40,23 @@ export function PlayerPhotosDialog({ open, onOpenChange, player }: PlayerPhotosD
                     unoptimized
                   />
                 </div>
-                <Button onClick={() => player.poolPhotoUrl && extractCardsListFromPicture({ url: player.poolPhotoUrl })}>Extract cards</Button>
+                <Button onClick={() => player.poolPhotoUrl && extractCardsListFromPicture({ url: player.poolPhotoUrl, eventId, playerId: player.id, type: 'POOL' })}>Extract cards</Button>
+
+                <div className="mt-2">
+                  {player.pool && player.pool.cards ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 max-h-60 overflow-y-auto border p-2 rounded">
+                      {player.pool.cards.map((cardName, index) => (
+                        <Badge key={index} className="break-words">
+                          {cardName}
+                        </Badge>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      Aucune carte extraite
+                    </p>
+                  )}
+                </div>
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground">
@@ -65,7 +82,23 @@ export function PlayerPhotosDialog({ open, onOpenChange, player }: PlayerPhotosD
                       unoptimized
                     />
                   </div>
-                  <Button onClick={() => player.decklistPhotoUrl && extractCardsListFromPicture({ url: player.decklistPhotoUrl })}>Extract cards</Button>
+                  <Button onClick={() => player.decklistPhotoUrl && extractCardsListFromPicture({ url: player.decklistPhotoUrl, eventId, playerId: player.id, type: 'DECK' })}>Extract cards</Button>
+
+                  <div className="mt-2">
+                    {player.deck && player.deck.cards ? (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 max-h-60 overflow-y-auto border p-2 rounded">
+                        {player.deck.cards.map((cardName, index) => (
+                          <Badge key={index} className="break-words">
+                            {cardName}
+                          </Badge>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        Aucune carte extraite
+                      </p>
+                    )}
+                  </div>
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground">

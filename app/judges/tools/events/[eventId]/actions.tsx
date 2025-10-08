@@ -1,15 +1,12 @@
 'use server';
-import { getDownloadUrl } from "@vercel/blob";
+import clientPromise from "@/lib/mongodb";
+import { LimitedEvent } from "@/lib/types";
 import { generateObject } from 'ai';
 import { z } from 'zod';
 
-export async function extractCardsListFromPicture({ url }: { url: string }): Promise<void> {
-    const photoURL = await getDownloadUrl(url);
-
-    console.log(photoURL);
-
-    const photoRaw = await fetch(photoURL);
-    const photoBlob = await photoRaw.blob();
+export async function extractCardsListFromPicture({ url, playerId, eventId, type }: { url: string; playerId: string; eventId: string, type: 'POOL' | 'DECK' }): Promise<void> {
+    const client = await clientPromise;
+    const db = client.db();
 
     const result = await generateObject({
         model: 'openai/gpt-4.1-mini',
@@ -32,7 +29,21 @@ export async function extractCardsListFromPicture({ url }: { url: string }): Pro
         presencePenalty: 0,
     });
 
-    console.log(result);
+    console.log(result.object.cards);
+
+    await db.collection<LimitedEvent>('events').updateOne(
+      {
+        id: eventId,
+        'players.id': playerId,
+      },
+      {
+        $set: {
+          [`players.$.${type === 'POOL' ? 'pool' : 'deck'}.photoUrl`]: url,
+          [`players.$.${type === 'POOL' ? 'pool' : 'deck'}.cards`]: result.object.cards,
+          updatedAt: new Date().toISOString(),
+        },
+      }
+    );
 
     return;
 } 
