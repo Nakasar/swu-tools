@@ -33,6 +33,7 @@ export function PlayerPhotosDialog({ open, onOpenChange, player }: PlayerPhotosD
                     alt="Pool de cartes"
                     fill
                     className="object-contain rounded"
+                    unoptimized
                   />
                 </div>
               ) : (
@@ -55,6 +56,7 @@ export function PlayerPhotosDialog({ open, onOpenChange, player }: PlayerPhotosD
                     alt="Decklist"
                     fill
                     className="object-contain rounded"
+                    unoptimized
                   />
                 </div>
               ) : (
@@ -89,6 +91,7 @@ export function PlayerPhotosDialog({ open, onOpenChange, player }: PlayerPhotosD
                         alt={`Deck check ${deckCheck.id}`}
                         fill
                         className="object-contain rounded"
+                        unoptimized
                       />
                     </div>
                   </div>
