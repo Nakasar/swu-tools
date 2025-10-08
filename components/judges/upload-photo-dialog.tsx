@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Camera, Upload } from 'lucide-react';
+import { Camera, Upload, AlertCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface UploadPhotoDialogProps {
   open: boolean;
@@ -24,6 +25,7 @@ export function UploadPhotoDialog({
 }: UploadPhotoDialogProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
+  const [isCameraLoading, setIsCameraLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
@@ -40,31 +42,48 @@ export function UploadPhotoDialog({
   };
 
   const startCamera = async () => {
+    setIsCameraLoading(true);
     try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' },
-      });
-      setStream(mediaStream);
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
+
+      const stream = await navigator.mediaDevices
+        .getUserMedia({ video: {
+                facingMode: { ideal: "environment" }
+        }, audio: false });
+
+      if (videoRef.current && stream) {
+        setStream(stream);
+        videoRef.current.srcObject = stream;
+        videoRef.current.play();
+        setIsCameraLoading(false);
+      } else {
+        setIsCameraLoading(false);
+        stream.getTracks().forEach(track => track.stop());
       }
     } catch (error) {
       console.error('Error accessing camera:', error);
-      alert('Impossible d\'accéder à la caméra');
+      setIsCameraLoading(false);
+      alert('Impossible d\'accéder à la caméra. Vérifiez les permissions dans les paramètres du navigateur.');
     }
   };
 
   const capturePhoto = () => {
-    if (videoRef.current) {
+    if (videoRef.current && videoRef.current.readyState === videoRef.current.HAVE_ENOUGH_DATA) {
       const canvas = document.createElement('canvas');
-      canvas.width = videoRef.current.videoWidth;
-      canvas.height = videoRef.current.videoHeight;
+      const video = videoRef.current;
+      
+      // Utiliser les dimensions réelles de la vidéo
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      
       const ctx = canvas.getContext('2d');
       if (ctx) {
-        ctx.drawImage(videoRef.current, 0, 0);
-        setPreview(canvas.toDataURL('image/jpeg'));
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        setPreview(canvas.toDataURL('image/jpeg', 0.95));
         stopCamera();
       }
+    } else {
+      console.error('Video not ready');
+      alert('La vidéo n\'est pas encore prête. Veuillez réessayer.');
     }
   };
 
@@ -73,6 +92,7 @@ export function UploadPhotoDialog({
       stream.getTracks().forEach((track) => track.stop());
       setStream(null);
     }
+    setIsCameraLoading(false);
   };
 
   const handleUpload = async () => {
@@ -130,7 +150,7 @@ export function UploadPhotoDialog({
         </DialogHeader>
 
         <div className="space-y-4">
-          {!preview && !stream && (
+          {!preview && !stream && !isCameraLoading && (
             <div className="flex gap-2">
               <Button onClick={startCamera} className="flex-1">
                 <Camera className="mr-2" />
@@ -154,13 +174,22 @@ export function UploadPhotoDialog({
             </div>
           )}
 
-          {stream && (
-            <div className="space-y-4">
+          {isCameraLoading && (
+            <div className="flex items-center justify-center p-8 text-muted-foreground">
+              <div className="text-center">
+                <Camera className="mx-auto mb-2 h-8 w-8 animate-pulse" />
+                <p>Chargement de la caméra...</p>
+              </div>
+            </div>
+          )}
+          <div className={cn("space-y-4", !stream && "hidden")}>
               <video
                 ref={videoRef}
                 autoPlay
                 playsInline
-                className="w-full rounded border"
+                muted
+                className="w-full rounded border bg-black"
+                style={{ maxHeight: '60vh' }}
               />
               <div className="flex gap-2">
                 <Button onClick={capturePhoto} className="flex-1">
@@ -171,7 +200,6 @@ export function UploadPhotoDialog({
                 </Button>
               </div>
             </div>
-          )}
 
           {preview && (
             <div className="space-y-4">
