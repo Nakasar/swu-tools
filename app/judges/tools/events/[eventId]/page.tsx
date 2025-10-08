@@ -11,6 +11,7 @@ import type { LimitedEvent } from '@/lib/types';
 import { AddPlayerDialog } from '@/components/judges/add-player-dialog';
 import { AddJudgeDialog } from '@/components/judges/add-judge-dialog';
 import { PlayersList } from '@/components/judges/players-list';
+import { authClient } from '@/lib/auth-client';
 
 export default function EventPage() {
   const params = useParams();
@@ -19,11 +20,10 @@ export default function EventPage() {
   const [loading, setLoading] = useState(true);
   const [showAddPlayer, setShowAddPlayer] = useState(false);
   const [showAddJudge, setShowAddJudge] = useState(false);
-
-  useEffect(() => {
+  const { data: session, isPending } = authClient.useSession();
+   useEffect(() => {
     loadEvent();
   }, [eventId]);
-
   const loadEvent = async () => {
     try {
       const response = await fetch(`/api/judges/events/${eventId}`);
@@ -38,6 +38,10 @@ export default function EventPage() {
     }
   };
 
+  if (isPending) {
+    return <></>;
+  }
+  
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">

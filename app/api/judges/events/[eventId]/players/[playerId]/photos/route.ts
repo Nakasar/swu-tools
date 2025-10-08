@@ -2,11 +2,21 @@ import { NextRequest, NextResponse } from 'next/server';
 import { put } from '@vercel/blob';
 import clientPromise from '@/lib/mongodb';
 import { LimitedEvent } from '@/lib/types';
+import { auth } from '@/lib/auth';
+import { headers } from 'next/headers';
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ eventId: string; playerId: string }> }
 ) {
+  const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+  
+    if (!session?.user.email) { 
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    }
+    
   const { eventId, playerId } = await params;
   try {
     const formData = await request.formData();
@@ -20,6 +30,15 @@ export async function POST(
       );
     }
 
+    const client = await clientPromise;
+    const db = client.db();
+
+    const event = await db.collection<LimitedEvent>('events').findOne({ id: eventId }, { projection: { id: 1, judges: 1 } });
+
+    if (!event || event.judges.indexOf(session.user.email) === -1) { 
+      return NextResponse.json({ error: 'Event not found' }, { status: 404 });
+    }
+
     // Upload to Vercel Blob
     const blob = await put(
       `events/${eventId}/${playerId}/${type}-${Date.now()}.jpg`,
@@ -28,10 +47,7 @@ export async function POST(
         access: 'public',
       }
     );
-
-    // Update MongoDB
-    const client = await clientPromise;
-    const db = client.db('swu-tools');
+    
 
     const fieldName = type === 'pool' ? 'poolPhotoUrl' : 'decklistPhotoUrl';
 

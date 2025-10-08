@@ -3,11 +3,21 @@ import { put } from '@vercel/blob';
 import { nanoid } from 'nanoid';
 import clientPromise from '@/lib/mongodb';
 import { LimitedEvent } from '@/lib/types';
+import { auth } from '@/lib/auth';
+import { headers } from 'next/headers';
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ eventId: string; playerId: string }> }
 ) {
+const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session?.user.email) { 
+    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+  }
+
   const { eventId, playerId } = await params;
   try {
     const formData = await request.formData();
@@ -16,6 +26,15 @@ export async function POST(
 
     if (!file) {
       return NextResponse.json({ error: 'Missing file' }, { status: 400 });
+    }
+
+    const client = await clientPromise;
+    const db = client.db();
+
+    const event = await db.collection<LimitedEvent>('events').findOne({ id: eventId }, { projection: { id: 1, judges: 1 } });
+
+    if (!event || event.judges.indexOf(session.user.email) === -1) { 
+      return NextResponse.json({ error: 'Event not found' }, { status: 404 });
     }
 
     // Upload to Vercel Blob
@@ -34,10 +53,6 @@ export async function POST(
       photoUrl: blob.url,
       notes: notes || undefined,
     };
-
-    // Update MongoDB
-    const client = await clientPromise;
-    const db = client.db('swu-tools');
 
     const result = await db.collection<LimitedEvent>('events').updateOne(
       {

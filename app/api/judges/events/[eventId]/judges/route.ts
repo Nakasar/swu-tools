@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import clientPromise from '@/lib/mongodb';
+import { headers } from 'next/headers';
+import { auth } from '@/lib/auth';
 
 const addJudgeSchema = z.object({
   email: z.string().email(),
@@ -10,6 +12,14 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ eventId: string }> }
 ) {
+  const session = await auth.api.getSession({
+      headers: await headers(),
+  });
+
+  if (!session?.user.email) { 
+    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
     const data = addJudgeSchema.parse(body);
@@ -18,6 +28,16 @@ export async function POST(
     const db = client.db('swu-tools');
 
     const { eventId } = await params;
+
+    const event = await db.collection('events').findOne({ id: eventId });
+
+    if (!event || event.judges.indexOf(session.user.email) === -1) {
+      return NextResponse.json({ error: 'Event not found' }, { status: 404 });
+    }
+
+    if (event.judges.indexOf(data.email) !== -1) {
+      return NextResponse.json({ error: 'Judge already added' }, { status: 400 });
+    }
 
     const result = await db.collection('events').updateOne(
       { id: eventId },
